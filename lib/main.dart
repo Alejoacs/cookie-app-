@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cookie_flutter_app/pages/auth/LoginPage.dart' as login;
 import 'package:cookie_flutter_app/pages/auth/RegisterPage.dart' as register;
+import 'package:cookie_flutter_app/pages/users/FeedPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cookie_flutter_app/components/splashScreen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding
+      .ensureInitialized(); // Asegurarse de que Flutter esté inicializado
   runApp(const MyApp());
 }
 
@@ -21,16 +26,14 @@ class MyApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFFDD2525),
         ),
-        // ignore: prefer_const_constructors
-        primaryColor: Color(0xFFDD2525),
+        primaryColor: const Color(0xFFDD2525),
         primaryTextTheme: const TextTheme(
-          // ignore: deprecated_member_use
           titleLarge: TextStyle(
             color: Colors.white,
           ),
         ),
       ),
-      home: const MyHomePage(title: 'COOKIE | HOME'),
+      home: SplashScreen(),
     );
   }
 }
@@ -45,6 +48,23 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('user_token');
+    if (token != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => FeedPage(token: token)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,21 +108,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      // ignore: prefer_const_constructors
-                      backgroundColor: Color(0xFFDD2525),
+                      backgroundColor: const Color(0xFFDD2525),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    // ignore: prefer_const_constructors
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.login,
                       color: Colors.white,
                     ),
-                    // ignore: prefer_const_constructors
-                    label: Text(
+                    label: const Text(
                       'LOGIN',
-                      // ignore: prefer_const_constructors
                       style: TextStyle(
                         color: Colors.white,
                       ),
@@ -119,21 +135,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      // ignore: prefer_const_constructors
-                      backgroundColor: Color(0xFFDD2525),
+                      backgroundColor: const Color(0xFFDD2525),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    // ignore: prefer_const_constructors
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.person_add,
                       color: Colors.white,
                     ),
-                    // ignore: prefer_const_constructors
-                    label: Text(
+                    label: const Text(
                       'REGISTER',
-                      // ignore: prefer_const_constructors
                       style: TextStyle(
                         color: Colors.white,
                       ),

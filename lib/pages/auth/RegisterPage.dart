@@ -1,8 +1,10 @@
 // ignore: file_names
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+// ignore_for_file: prefer_const_constructors
 import 'package:cookie_flutter_app/pages/auth/LoginPage.dart';
+import 'package:cookie_flutter_app/main.dart' as main;
+import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'dart:convert';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -24,57 +26,43 @@ class _RegisterPageState extends State<RegisterPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          // ignore: prefer_const_constructors
           title: Text('Términos y Condiciones'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ignore: prefer_const_constructors
               Text(
                 'Términos y Condiciones de Uso',
-                // ignore: prefer_const_constructors
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              // ignore: prefer_const_constructors
               SizedBox(height: 10),
-              // ignore: prefer_const_constructors
               Text(
                 '1. Al utilizar esta red social, aceptas cumplir con los siguientes términos y condiciones.',
               ),
-              // ignore: prefer_const_constructors
               Text(
                 '2. Eres responsable de toda la actividad que ocurra bajo tu cuenta.',
               ),
-              // ignore: prefer_const_constructors
               Text(
                 '3. No se permite el acoso, el discurso de odio ni la violencia en esta plataforma.',
               ),
-              // ignore: prefer_const_constructors
               Text(
                 '4. No compartas información personal sensible en la red social.',
               ),
-              // ignore: prefer_const_constructors
               Text(
                 '5. No publiques contenido que viole los derechos de autor.',
               ),
-              // ignore: prefer_const_constructors
               Text(
                 '6. Respetar la privacidad de otros usuarios y no compartir información confidencial sin su consentimiento.',
               ),
-              // ignore: prefer_const_constructors
               Text(
                 '7. No utilizar la red social para fines comerciales sin autorización.',
               ),
-              // ignore: prefer_const_constructors
               Text(
                 '8. La red social no se hace responsable del contenido compartido por los usuarios.',
               ),
-              // ignore: prefer_const_constructors
               Text(
                 '9. Se reserva el derecho de eliminar contenido que viole estos términos y condiciones.',
               ),
-              // ignore: prefer_const_constructors
               SizedBox(height: 10),
               TextButton(
                 onPressed: () {
@@ -106,9 +94,8 @@ class _RegisterPageState extends State<RegisterPage> {
       body: jsonData,
     );
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       showDialog(
-        // ignore: use_build_context_synchronously
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
@@ -129,8 +116,28 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
     } else {
-      // ignore: avoid_print
-      print('Error al registrar usuario');
+      // Manejo de errores
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      final String errorMessage =
+          responseData['message'] ?? 'Error al registrar usuario';
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: Text(errorMessage),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
@@ -143,7 +150,6 @@ class _RegisterPageState extends State<RegisterPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            // ignore: prefer_const_constructors
             Column(
               // ignore: prefer_const_literals_to_create_immutables
               children: <Widget>[
@@ -155,33 +161,30 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     child: IconButton(
                       onPressed: () {
-                        Navigator.popUntil(context, ModalRoute.withName('/'));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const main.MyApp(),
+                          ),
+                        );
                       },
-
-                      // ignore: prefer_const_constructors
                       icon: Icon(
                         Icons.arrow_back,
-                        // ignore: prefer_const_constructors
                         color: Color(0xFFDD2525),
                       ),
                     ),
                   ),
                 ),
-                // ignore: prefer_const_constructors
                 Text(
                   'WELCOME',
-                  // ignore: prefer_const_constructors
                   style: TextStyle(
                     fontSize: 70,
                     fontWeight: FontWeight.bold,
-                    // ignore: prefer_const_constructors
                     color: Color(0xFFDD2525),
                   ),
                 ),
-                // ignore: prefer_const_constructors
                 Text(
                   'Sign up to access all features',
-                  // ignore: prefer_const_constructors
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -190,7 +193,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ],
             ),
-
             Column(
               children: <Widget>[
                 Container(
@@ -217,7 +219,6 @@ class _RegisterPageState extends State<RegisterPage> {
               children: <Widget>[
                 TextFormField(
                   controller: _usernameController,
-                  // ignore: prefer_const_constructors
                   style: TextStyle(fontSize: 14),
                   decoration: const InputDecoration(
                     labelText: 'Username',
@@ -227,11 +228,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     prefixIcon: Icon(Icons.person, color: Color(0xFFDD2525)),
                   ),
                 ),
-                // ignore: prefer_const_constructors
                 SizedBox(height: 10), // Agregar espacio entre los campos
                 TextFormField(
                   controller: _emailController,
-                  // ignore: prefer_const_constructors
                   style: TextStyle(fontSize: 14),
                   decoration: const InputDecoration(
                     labelText: 'Email',
@@ -241,21 +240,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     prefixIcon: Icon(Icons.email, color: Color(0xFFDD2525)),
                   ),
                 ),
-                // ignore: prefer_const_constructors
                 SizedBox(height: 10), // Agregar espacio entre los campos
                 TextFormField(
                   controller: _passwordController,
-                  // ignore: prefer_const_constructors
                   style: TextStyle(fontSize: 14),
                   decoration: InputDecoration(
                     labelText: 'Password',
-
-                    // ignore: prefer_const_constructors
                     border: OutlineInputBorder(
-                      // ignore: prefer_const_constructors
                       borderRadius: BorderRadius.all(Radius.circular(10)),
                     ),
-                    // ignore: prefer_const_constructors
                     prefixIcon: Icon(Icons.lock, color: Color(0xFFDD2525)),
                     suffixIcon: IconButton(
                       onPressed: () {
@@ -272,7 +265,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   obscureText: _obscurePassword,
                 ),
-                // ignore: prefer_const_constructors
                 SizedBox(height: 10), // Agregar espacio entre los campos
                 Row(
                   children: [
@@ -289,10 +281,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         // Mostrar la modal de términos y condiciones
                         _showTermsAndConditionsModal(context);
                       },
-                      // ignore: prefer_const_constructors
                       child: Text(
                         'Accept  ',
-                        // ignore: prefer_const_constructors
                         style: TextStyle(fontSize: 14),
                       ),
                     ),
@@ -301,31 +291,25 @@ class _RegisterPageState extends State<RegisterPage> {
                         // Mostrar la modal de términos y condiciones
                         _showTermsAndConditionsModal(context);
                       },
-                      // ignore: prefer_const_constructors
                       child: Text(
                         'terms and conditions',
-                        // ignore: prefer_const_constructors
                         style:
-                            // ignore: prefer_const_constructors
                             TextStyle(fontSize: 14, color: Color(0xFFDD2525)),
                       ),
                     ),
                   ],
                 ),
-                // ignore: prefer_const_constructors
                 SizedBox(
                   height: 10,
                 ), // Espacio entre los campos y el botón de registro
                 ElevatedButton(
                   onPressed: _acceptTerms ? _registerUser : null,
-                  // ignore: sort_child_properties_last, prefer_const_constructors
+                  //
                   child: Text(
                     'Sing Up',
-                    // ignore: prefer_const_constructors
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    // ignore: prefer_const_constructors
                     backgroundColor: Color(0xFFDD2525),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -333,7 +317,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
 
-                // ignore: prefer_const_constructors
                 SizedBox(height: 10), // Agregar espacio entre los campos
                 GestureDetector(
                   onTap: () {
@@ -345,25 +328,19 @@ class _RegisterPageState extends State<RegisterPage> {
                     );
                   },
                   child: RichText(
-                    // ignore: prefer_const_constructors
                     text: TextSpan(
-                      // ignore: prefer_const_constructors
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.black54,
                       ),
                       // ignore: prefer_const_literals_to_create_immutables
                       children: [
-                        // ignore: prefer_const_constructors
                         TextSpan(
                           text: 'You have account? ',
                         ),
-                        // ignore: prefer_const_constructors
                         TextSpan(
                           text: 'Sing In Now',
-                          // ignore: prefer_const_constructors
                           style: TextStyle(
-                            // ignore: prefer_const_constructors
                             color: Color(0xFFDD2525),
                             fontWeight: FontWeight.bold,
                           ),
@@ -375,7 +352,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ],
             ),
-
             const Text(
               '© 2024 Cookie. All rights reserved.',
               style: TextStyle(

@@ -1,15 +1,17 @@
-// ignore: file_names
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:cookie_flutter_app/pages/users/FeedPage.dart';
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, avoid_unnecessary_containers, library_private_types_in_public_api, use_build_context_synchronously, avoid_print
+
 import 'package:cookie_flutter_app/pages/auth/RegisterPage.dart';
+import 'package:cookie_flutter_app/pages/users/FeedPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cookie_flutter_app/main.dart' as main;
+import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _LoginPageState createState() => _LoginPageState();
 }
 
@@ -37,13 +39,15 @@ class _LoginPageState extends State<LoginPage> {
     if (response.statusCode == 200) {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
       final String token = responseData['token'];
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_token', token);
+
       Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (context) => FeedPage(token: token)),
       );
     } else {
-      // ignore: avoid_print
       print('Error en el inicio de sesión: ${response.statusCode}');
     }
   }
@@ -58,14 +62,9 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              // ignore: avoid_unnecessary_containers
               Container(
-                // ignore: prefer_const_constructors
                 margin: EdgeInsets.only(top: 20),
-
-                // ignore: prefer_const_constructors
                 child: Column(
-                  // ignore: prefer_const_literals_to_create_immutables
                   children: <Widget>[
                     Align(
                       alignment: Alignment.topLeft,
@@ -75,13 +74,15 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         child: IconButton(
                           onPressed: () {
-                            Navigator.popUntil(
-                                context, ModalRoute.withName('/'));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const main.MyApp(),
+                              ),
+                            );
                           },
-                          // ignore: prefer_const_constructors
                           icon: Icon(
                             Icons.arrow_back,
-                            // ignore: prefer_const_constructors
                             color: Color(0xFFDD2525),
                           ),
                         ),
@@ -106,13 +107,10 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-
-              // ignore: avoid_unnecessary_containers
               Container(
                 child: Column(
                   children: <Widget>[
                     Container(
-                      // ignore: prefer_const_constructors
                       padding: EdgeInsets.all(2),
                       child: Image.asset(
                         'assets/img/img2.png',
@@ -135,8 +133,6 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-
-              // ignore: avoid_unnecessary_containers
               Container(
                 child: Column(
                   children: <Widget>[
@@ -148,7 +144,6 @@ class _LoginPageState extends State<LoginPage> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        // ignore: prefer_const_constructors
                         prefixIcon: Icon(Icons.email, color: Color(0xFFDD2525)),
                       ),
                     ),
@@ -157,11 +152,9 @@ class _LoginPageState extends State<LoginPage> {
                       controller: _passwordController,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        // labelStyle: TextStyle(color: Color(0xFFDD2525)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        // ignore: prefer_const_constructors
                         prefixIcon: Icon(Icons.lock, color: Color(0xFFDD2525)),
                         suffixIcon: IconButton(
                           onPressed: () {
@@ -189,25 +182,18 @@ class _LoginPageState extends State<LoginPage> {
                         );
                       },
                       child: RichText(
-                        // ignore: prefer_const_constructors
                         text: TextSpan(
-                          // ignore: prefer_const_constructors
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.black54,
                           ),
-                          // ignore: prefer_const_literals_to_create_immutables
                           children: [
-                            // ignore: prefer_const_constructors
                             TextSpan(
                               text: 'Don´t have an account? ',
                             ),
-                            // ignore: prefer_const_constructors
                             TextSpan(
                               text: 'Sign up now',
-                              // ignore: prefer_const_constructors
                               style: TextStyle(
-                                // ignore: prefer_const_constructors
                                 color: Color(0xFFDD2525),
                                 fontWeight: FontWeight.bold,
                               ),
@@ -220,8 +206,6 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-
-              // ignore: avoid_unnecessary_containers
               Container(
                 child: Column(
                   children: <Widget>[
@@ -231,7 +215,6 @@ class _LoginPageState extends State<LoginPage> {
                         _loginUser(context);
                       },
                       style: ElevatedButton.styleFrom(
-                        // ignore: prefer_const_constructors
                         backgroundColor: Color(0xFFDD2525),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -245,8 +228,6 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-
-              // ignore: avoid_unnecessary_containers
               Container(
                 child: const Text(
                   '© 2024 Cookie. All rights reserved.',

@@ -1,8 +1,10 @@
 // ignore: file_names
-// ignore_for_file: avoid_print, prefer_const_constructors, prefer_const_literals_to_create_immutables
+// ignore_for_file: avoid_print, prefer_const_constructors, prefer_const_literals_to_create_immutables, use_build_context_synchronously, use_key_in_widget_constructors
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cookie_flutter_app/pages/auth/LoginPage.dart';
 
 class FeedPage extends StatelessWidget {
   final String token;
@@ -15,17 +17,23 @@ class FeedPage extends StatelessWidget {
     final http.Response response = await http.post(
       Uri.parse(logoutUrl),
       headers: {
-        'x-access-token': token, // Aquí se debe poner el token
+        'x-access-token': token,
       },
     );
 
     if (response.statusCode == 200) {
       print('Sesión cerrada exitosamente');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_token');
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (Route<dynamic> route) => false,
+      );
     } else {
       print('Error al cerrar sesión: ${response.statusCode}');
     }
-
-    Navigator.pop(context);
   }
 
   @override
@@ -65,7 +73,7 @@ class NavBar extends StatelessWidget {
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.9,
           child: Container(
-            height: 65.0, // Aumenta el tamaño del contenedor
+            height: 65.0,
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             decoration: BoxDecoration(
               color: Colors.red[900],
@@ -74,21 +82,18 @@ class NavBar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildDropdownButton(context), // DropdownButton
+                _buildDropdownButton(context),
                 TextButton(
                   onPressed: () {},
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.keyboard_arrow_up,
-                          color: Colors.white,
-                          size: 24), // Ajusta el tamaño del icono
+                          color: Colors.white, size: 24),
                       const SizedBox(height: 4),
                       const Text(
                         'Profile',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16), // Tamaño de fuente reducido
+                        style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ],
                   ),
@@ -117,8 +122,8 @@ class NavBar extends StatelessWidget {
         _buildDropdownItem(Icons.bar_chart, 'Statistics', context),
         _buildDropdownItem(Icons.notifications, 'Notifications', context),
       ],
-      offset: const Offset(0, -50), // Desplaza el menú hacia arriba
-      color: Colors.red[900], // Establece el color del menú
+      offset: const Offset(0, -50),
+      color: Colors.red[900],
       onSelected: (String value) {
         _showModal(context, value);
       },
