@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cookie_flutter_app/pages/auth/RegisterPage.dart' as register;
 import 'package:cookie_flutter_app/pages/auth/LoginPage.dart' as login;
 import 'package:cookie_flutter_app/pages/admin/DashboardPage.dart';
-import 'package:cookie_flutter_app/components/splashScreen.dart';
 import 'package:cookie_flutter_app/pages/users/FeedPage.dart';
+import 'package:cookie_flutter_app/components/splashScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
@@ -52,30 +52,60 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
+    _checkLoginStatus(context);
   }
 
-  Future<void> _checkLoginStatus() async {
+  Future<void> _checkLoginStatus(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('user_token');
+
     if (token != null) {
-      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-      String role = decodedToken['role'];
-      Widget targetPage;
+      print('Token recuperado: $token');
+      try {
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        String role = decodedToken['role'];
+        Widget targetPage;
 
-      switch (role) {
-        case 'admin' || 'moder':
-          targetPage = DashboardPage();
-          break;
-        default:
-          targetPage = FeedPage(token: token);
+        switch (role) {
+          case 'admin':
+          case 'moder':
+            targetPage = DashboardPage();
+            break;
+          default:
+            targetPage = FeedPage(token: token);
+        }
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => targetPage),
+        );
+      } catch (error) {
+        print('Error al decodificar el token: $error');
+        _showErrorDialog(context, 'Error al decodificar el token.');
       }
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => targetPage),
-      );
+    } else {
+      print('No se encontró ningún token almacenado');
     }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: const Text('Aceptar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

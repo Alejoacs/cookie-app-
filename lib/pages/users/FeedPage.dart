@@ -124,9 +124,6 @@ class NavBar extends StatelessWidget {
       ],
       offset: const Offset(0, -50),
       color: Colors.red[900],
-      onSelected: (String value) {
-        _showModal(context, value);
-      },
     );
   }
 
@@ -141,16 +138,41 @@ class NavBar extends StatelessWidget {
           Text(label, style: const TextStyle(color: Colors.white)),
         ],
       ),
+      onTap: () {
+        _showModal(context, label);
+      },
     );
   }
 
   void _showModal(BuildContext context, String item) {
+    Widget modalContent;
+    switch (item) {
+      case 'Save':
+        modalContent = _buildSaveModalContent(context);
+        break;
+      case 'Search':
+        modalContent = _buildSearchModalContent(context);
+        break;
+      case 'Message':
+        modalContent = _buildMessageModalContent(context);
+        break;
+      case 'Statistics':
+        modalContent = _buildStatisticsModalContent(context);
+        break;
+      case 'Notifications':
+        modalContent = _buildNotificationsModalContent(context);
+        break;
+      default:
+        modalContent = Container();
+        break;
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Modal for $item'),
-          content: Text('This is the modal for $item.'),
+          content: modalContent,
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -161,6 +183,103 @@ class NavBar extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSaveModalContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Save your data', style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 8),
+        Text('You can save your files securely here.'),
+        SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('Save Now'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchModalContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Search for information',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 8),
+        Text('Find what you need with our powerful search tools.'),
+        SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('Start Searching'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMessageModalContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Send a message', style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 8),
+        Text('Compose your message and hit send.'),
+        SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('Send Message'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatisticsModalContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('View your stats', style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 8),
+        Text('Analyze your performance with detailed statistics.'),
+        SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('View Stats'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNotificationsModalContent(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Check your notifications',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 8),
+        Text('Stay updated with important notifications.'),
+        SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('View Notifications'),
+        ),
+      ],
     );
   }
 }

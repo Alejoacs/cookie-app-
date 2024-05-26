@@ -32,47 +32,123 @@ class _LoginPageState extends State<LoginPage> {
 
     final jsonData = jsonEncode(data);
 
-    final http.Response response = await http.post(
-      Uri.parse(apiUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonData,
+    try {
+      final http.Response response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonData,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final String token = responseData['token'];
+
+        final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        final String role = decodedToken['role'];
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_token', token);
+
+        // Verificar si el token fue almacenado correctamente
+        String? storedToken = prefs.getString('user_token');
+        if (storedToken != null) {
+          print('Token almacenado correctamente: $storedToken');
+        } else {
+          print('Error al almacenar el token');
+        }
+
+        switch (role) {
+          case 'admin':
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => DashboardPage()),
+            );
+            break;
+          case 'moder':
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => DashboardPage()),
+            );
+            break;
+          default:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FeedPage(token: token)),
+            );
+            break;
+        }
+      } else {
+        String errorMessage;
+        switch (response.statusCode) {
+          case 400:
+            errorMessage = 'Solicitud incorrecta. Verifica tus datos.';
+            break;
+          case 401:
+            errorMessage = 'Credenciales incorrectas. Inténtalo de nuevo.';
+            break;
+          case 500:
+            errorMessage = 'Error del servidor. Inténtalo más tarde.';
+            break;
+          default:
+            errorMessage = 'Error desconocido: ${response.statusCode}.';
+        }
+        _showErrorDialog(context, errorMessage);
+      }
+    } catch (error) {
+      _showErrorDialog(
+          context, 'Error de red. Verifica tu conexión a internet.');
+    }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: Text('Aceptar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
+  }
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-      final String token = responseData['token'];
+  Future<void> _checkLoginStatus(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('user_token');
 
-      // Decodificar el token JWT para obtener el rol del usuario
-      final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-      final String role = decodedToken['role'];
+    if (token != null) {
+      print('Token recuperado: $token');
+      try {
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        String role = decodedToken['role'];
+        Widget targetPage;
 
-      // Guardar el token en shared_preferences
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_token', token);
+        switch (role) {
+          case 'admin':
+          case 'moder':
+            targetPage = DashboardPage();
+            break;
+          default:
+            targetPage = FeedPage(token: token);
+        }
 
-      // Redirigir al usuario según su rol
-      switch (role) {
-        case 'admin':
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => DashboardPage()),
-          );
-          break;
-        case 'moder':
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => DashboardPage()),
-          );
-          break;
-        default:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => FeedPage(token: token)),
-          );
-          break;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => targetPage),
+        );
+      } catch (error) {
+        print('Error al decodificar el token: $error');
       }
     } else {
-      print('Error en el inicio de sesión: ${response.statusCode}');
+      print('No se encontró ningún token almacenado');
     }
   }
 
