@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:cookie_flutter_app/pages/auth/LoginPage.dart' as login;
 import 'package:cookie_flutter_app/pages/auth/RegisterPage.dart' as register;
+import 'package:cookie_flutter_app/pages/auth/LoginPage.dart' as login;
+import 'package:cookie_flutter_app/pages/admin/DashboardPage.dart';
+import 'package:cookie_flutter_app/components/splashScreen.dart';
 import 'package:cookie_flutter_app/pages/users/FeedPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cookie_flutter_app/components/splashScreen.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Asegurarse de que Flutter esté inicializado
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -58,9 +59,21 @@ class _MyHomePageState extends State<MyHomePage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('user_token');
     if (token != null) {
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      String role = decodedToken['role'];
+      Widget targetPage;
+
+      switch (role) {
+        case 'admin' || 'moder':
+          targetPage = DashboardPage();
+          break;
+        default:
+          targetPage = FeedPage(token: token);
+      }
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => FeedPage(token: token)),
+        MaterialPageRoute(builder: (context) => targetPage),
       );
     }
   }

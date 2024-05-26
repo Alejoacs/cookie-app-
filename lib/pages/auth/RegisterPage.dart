@@ -1,5 +1,4 @@
-// ignore: file_names
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, use_build_context_synchronously, sort_child_properties_last
 import 'package:cookie_flutter_app/pages/auth/LoginPage.dart';
 import 'package:cookie_flutter_app/main.dart' as main;
 import 'package:http/http.dart' as http;

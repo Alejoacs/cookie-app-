@@ -1,8 +1,10 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, avoid_unnecessary_containers, library_private_types_in_public_api, use_build_context_synchronously, avoid_print
 
+import 'package:cookie_flutter_app/pages/admin/dashboardPage.dart';
 import 'package:cookie_flutter_app/pages/auth/RegisterPage.dart';
 import 'package:cookie_flutter_app/pages/users/FeedPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:cookie_flutter_app/main.dart' as main;
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -40,13 +42,35 @@ class _LoginPageState extends State<LoginPage> {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
       final String token = responseData['token'];
 
+      // Decodificar el token JWT para obtener el rol del usuario
+      final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      final String role = decodedToken['role'];
+
+      // Guardar el token en shared_preferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_token', token);
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => FeedPage(token: token)),
-      );
+      // Redirigir al usuario según su rol
+      switch (role) {
+        case 'admin':
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardPage()),
+          );
+          break;
+        case 'moder':
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardPage()),
+          );
+          break;
+        default:
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => FeedPage(token: token)),
+          );
+          break;
+      }
     } else {
       print('Error en el inicio de sesión: ${response.statusCode}');
     }
