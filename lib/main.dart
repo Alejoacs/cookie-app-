@@ -1,6 +1,8 @@
+// ignore_for_file: unused_import, prefer_const_constructors, avoid_print, use_build_context_synchronously
+
 import 'package:flutter/material.dart';
-import 'package:cookie_flutter_app/pages/auth/RegisterPage.dart' as register;
 import 'package:cookie_flutter_app/pages/auth/LoginPage.dart' as login;
+import 'package:cookie_flutter_app/pages/auth/RegisterPage.dart' as register;
 import 'package:cookie_flutter_app/pages/admin/DashboardPage.dart';
 import 'package:cookie_flutter_app/pages/users/FeedPage.dart';
 import 'package:cookie_flutter_app/components/splashScreen.dart';
@@ -34,7 +36,9 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: SplashScreen(),
+      home: MyHomePage(
+        title: 'Hola',
+      ),
     );
   }
 }
@@ -52,10 +56,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus(context);
+    _checkLoginStatus();
   }
 
-  Future<void> _checkLoginStatus(BuildContext context) async {
+  Future<void> _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('user_token');
 
@@ -69,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
         switch (role) {
           case 'admin':
           case 'moder':
-            targetPage = DashboardPage();
+            targetPage = DashboardPage(token: token);
             break;
           default:
             targetPage = FeedPage(token: token);
@@ -81,31 +85,12 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       } catch (error) {
         print('Error al decodificar el token: $error');
-        _showErrorDialog(context, 'Error al decodificar el token.');
+        // Manejar el error si hay un problema al decodificar el token
       }
     } else {
       print('No se encontró ningún token almacenado');
+      // Si no se encuentra ningún token almacenado, no hagas nada
     }
-  }
-
-  void _showErrorDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Error'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              child: const Text('Aceptar'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override

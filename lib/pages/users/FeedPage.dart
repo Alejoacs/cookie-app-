@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cookie_flutter_app/pages/auth/LoginPage.dart';
+import 'package:cookie_flutter_app/main.dart' as main;
 
 class FeedPage extends StatelessWidget {
   final String token;
@@ -28,7 +28,7 @@ class FeedPage extends StatelessWidget {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+        MaterialPageRoute(builder: (context) => const main.MyApp()),
         (Route<dynamic> route) => false,
       );
     } else {
@@ -84,7 +84,9 @@ class NavBar extends StatelessWidget {
               children: [
                 _buildDropdownButton(context),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    _showProfileModal(context);
+                  },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -109,6 +111,30 @@ class NavBar extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileModal(BuildContext context) {
+    return AlertDialog(
+      title: Text('User Profile'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Correo: acevedosernadiego@gmail.com'),
+          Text('Nombre: Diego'),
+          Text('Teléfono: 3128735741'),
+        ],
+      ),
+    );
+  }
+
+  void _showProfileModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return _buildProfileModal(context);
+      },
     );
   }
 

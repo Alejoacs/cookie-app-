@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, avoid_unnecessary_containers, library_private_types_in_public_api, use_build_context_synchronously, avoid_print
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, avoid_unnecessary_containers, library_private_types_in_public_api, use_build_context_synchronously, avoid_print, unused_element
 
 import 'package:cookie_flutter_app/pages/admin/dashboardPage.dart';
 import 'package:cookie_flutter_app/pages/auth/RegisterPage.dart';
@@ -61,13 +61,15 @@ class _LoginPageState extends State<LoginPage> {
           case 'admin':
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => DashboardPage()),
+              MaterialPageRoute(
+                  builder: (context) => DashboardPage(token: token)),
             );
             break;
           case 'moder':
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => DashboardPage()),
+              MaterialPageRoute(
+                  builder: (context) => DashboardPage(token: token)),
             );
             break;
           default:
@@ -134,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
         switch (role) {
           case 'admin':
           case 'moder':
-            targetPage = DashboardPage();
+            targetPage = DashboardPage(token: token);
             break;
           default:
             targetPage = FeedPage(token: token);
