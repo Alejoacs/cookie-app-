@@ -50,12 +50,12 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('user_token', token);
 
         // Verificar si el token fue almacenado correctamente
-        String? storedToken = prefs.getString('user_token');
-        if (storedToken != null) {
-          print('Token almacenado correctamente: $storedToken');
-        } else {
-          print('Error al almacenar el token');
-        }
+        // String? storedToken = prefs.getString('user_token');
+        // if (storedToken != null) {
+        //   print('Token almacenado correctamente: $storedToken');
+        // } else {
+        //   print('Error al almacenar el token');
+        // }
 
         switch (role) {
           case 'admin':

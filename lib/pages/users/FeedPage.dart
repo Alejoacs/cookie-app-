@@ -1,6 +1,5 @@
 // ignore: file_names
 // ignore_for_file: avoid_print, prefer_const_constructors, prefer_const_literals_to_create_immutables, use_build_context_synchronously, use_key_in_widget_constructors, unused_local_variable, unused_element
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -67,6 +66,7 @@ class _FeedPageState extends State<FeedPage> {
         setState(() {
           userData = responseData;
         });
+        // print('Datos de usuario obtenidos exitosamente: $responseData');
       } else {
         print('Error al obtener datos de usuario: ${response.statusCode}');
       }
@@ -113,15 +113,57 @@ class _FeedPageState extends State<FeedPage> {
 
   Widget _buildProfileModal(BuildContext context) {
     return AlertDialog(
-      title: Text('User Profile'),
+      // title: Text('User Profile'),
+      contentPadding: EdgeInsets.all(20), // Ajusta el tamaño de la modal aquí
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (userData != null) ...[
-            Text('Email: ${userData!['email']}'),
-            Text('Nombre: ${userData!['username']}'),
-            Text('Teléfono: ${userData!['phone_number']}'),
+            if (userData!['image'] != null &&
+                userData!['image']['secure_url'] != null) ...[
+              Stack(
+                children: [
+                  ClipOval(
+                    child: Image.network(
+                      userData!['image']['secure_url'],
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Icon(
+                      userData!['status'] == 'active'
+                          ? Icons.fiber_manual_record
+                          : Icons.circle,
+                      color: userData!['status'] == 'active'
+                          ? Colors.green
+                          : Colors.red,
+                      size: 16,
+                    ),
+                  ),
+                  // Positioned(
+                  //   top: 0,
+                  //   left: 0,
+                  //   child: IconButton(
+                  //       icon: Icon(Icons.settings), // Icono de edición
+                  //       onPressed: () {}),
+                  // )
+                ],
+              ),
+            ],
+            Text('${userData!['fullname']}'),
+            Text(
+              '@${userData!['username']}',
+              style: TextStyle(fontSize: 12), // Ajusta el tamaño del texto aquí
+            ),
+            SizedBox(
+                height:
+                    8), // Espacio vertical entre el nombre de usuario y la descripción
+            Text('${userData!['description']}'),
           ] else ...[
             Text('Cargando datos...'),
           ],
