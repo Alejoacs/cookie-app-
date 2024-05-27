@@ -1,15 +1,29 @@
 // ignore: file_names
-// ignore_for_file: avoid_print, prefer_const_constructors, prefer_const_literals_to_create_immutables, use_build_context_synchronously, use_key_in_widget_constructors
+// ignore_for_file: avoid_print, prefer_const_constructors, prefer_const_literals_to_create_immutables, use_build_context_synchronously, use_key_in_widget_constructors, unused_local_variable, unused_element
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cookie_flutter_app/main.dart' as main;
 
-class FeedPage extends StatelessWidget {
+class FeedPage extends StatefulWidget {
   final String token;
 
   const FeedPage({super.key, required this.token});
+
+  @override
+  _FeedPageState createState() => _FeedPageState();
+}
+
+class _FeedPageState extends State<FeedPage> {
+  Map<String, dynamic>? userData;
+
+  @override
+  void initState() {
+    super.initState();
+    // _getUserData(); // Elimina esta línea
+  }
 
   Future<void> _logout(BuildContext context) async {
     const String logoutUrl = 'https://co-api-vjvb.onrender.com/api/auth/logout';
@@ -17,7 +31,7 @@ class FeedPage extends StatelessWidget {
     final http.Response response = await http.post(
       Uri.parse(logoutUrl),
       headers: {
-        'x-access-token': token,
+        'x-access-token': widget.token,
       },
     );
 
@@ -36,6 +50,41 @@ class FeedPage extends StatelessWidget {
     }
   }
 
+  Future<void> _getUserData() async {
+    const String getUserDataUrl =
+        'https://co-api-vjvb.onrender.com/api/profile/';
+
+    try {
+      final http.Response response = await http.get(
+        Uri.parse(getUserDataUrl),
+        headers: {
+          'x-access-token': widget.token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        setState(() {
+          userData = responseData;
+        });
+      } else {
+        print('Error al obtener datos de usuario: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Excepción al obtener datos de usuario: $e');
+    }
+  }
+
+  void _showProfileModalWithUserData(BuildContext context) async {
+    await _getUserData();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return _buildProfileModal(context);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +101,30 @@ class FeedPage extends StatelessWidget {
               ],
             ),
           ),
-          NavBar(logout: _logout),
+          NavBar(
+            logout: _logout,
+            userData: userData,
+            showProfileModal: _showProfileModalWithUserData,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileModal(BuildContext context) {
+    return AlertDialog(
+      title: Text('User Profile'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (userData != null) ...[
+            Text('Email: ${userData!['email']}'),
+            Text('Nombre: ${userData!['username']}'),
+            Text('Teléfono: ${userData!['phone_number']}'),
+          ] else ...[
+            Text('Cargando datos...'),
+          ],
         ],
       ),
     );
@@ -61,8 +133,15 @@ class FeedPage extends StatelessWidget {
 
 class NavBar extends StatelessWidget {
   final Function(BuildContext) logout;
+  final Map<String, dynamic>? userData;
+  final Function(BuildContext) showProfileModal;
 
-  const NavBar({Key? key, required this.logout});
+  const NavBar({
+    Key? key,
+    required this.logout,
+    required this.userData,
+    required this.showProfileModal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +164,7 @@ class NavBar extends StatelessWidget {
                 _buildDropdownButton(context),
                 TextButton(
                   onPressed: () {
-                    _showProfileModal(context);
+                    showProfileModal(context);
                   },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -111,30 +190,6 @@ class NavBar extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildProfileModal(BuildContext context) {
-    return AlertDialog(
-      title: Text('User Profile'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Correo: acevedosernadiego@gmail.com'),
-          Text('Nombre: Diego'),
-          Text('Teléfono: 3128735741'),
-        ],
-      ),
-    );
-  }
-
-  void _showProfileModal(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return _buildProfileModal(context);
-      },
     );
   }
 
@@ -261,9 +316,7 @@ class NavBar extends StatelessWidget {
         Text('Compose your message and hit send.'),
         SizedBox(height: 16),
         ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: () {},
           child: Text('Send Message'),
         ),
       ],
