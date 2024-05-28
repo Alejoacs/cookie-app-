@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_declarations, library_private_types_in_public_api, avoid_print, use_build_context_synchronously, avoid_function_literals_in_foreach_calls
+// ignore_for_file: prefer_const_declarations, library_private_types_in_public_api, avoid_print, use_build_context_synchronously, avoid_function_literals_in_foreach_calls, prefer_const_constructors
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -146,6 +146,235 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  void _showUserDetails(dynamic user) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: contentBox(context, user),
+        );
+      },
+    );
+  }
+
+  contentBox(context, dynamic user) {
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Full Name: ${user['fullname'] ?? 'N/A'}',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Text('Gender: ',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              Text('${user['gender'] ?? 'N/A'}',
+                  style: TextStyle(fontSize: 13)),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Text('Phone Number: ',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              Text('${user['phone_number'] ?? 'N/A'}',
+                  style: TextStyle(fontSize: 13)),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Text('Description: ',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              Text('${user['description'] ?? 'N/A'}',
+                  style: TextStyle(fontSize: 13)),
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(color: Colors.black, fontSize: 15),
+                  children: [
+                    TextSpan(
+                      text: 'Followers: ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: '${user['followers']?.length ?? 0}',
+                    ),
+                  ],
+                ),
+              ),
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(color: Colors.black, fontSize: 15),
+                  children: [
+                    TextSpan(
+                      text: 'Following: ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: '${user['following']?.length ?? 0}',
+                    ),
+                  ],
+                ),
+              ),
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(color: Colors.black, fontSize: 15),
+                  children: [
+                    TextSpan(
+                      text: 'Friends: ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: '${user['friends']?.length ?? 0}',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Close'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditUserDialog(int index) {
+    var user = userData![index];
+    var userId = user['_id'];
+
+    TextEditingController fullnameController =
+        TextEditingController(text: user['fullname']);
+    TextEditingController genderController =
+        TextEditingController(text: user['gender']);
+    TextEditingController phoneNumberController =
+        TextEditingController(text: user['phone_number']);
+    TextEditingController descriptionController =
+        TextEditingController(text: user['description']);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Center(
+          child: Material(
+            type: MaterialType.transparency,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: fullnameController,
+                    decoration: const InputDecoration(labelText: 'Full Name'),
+                  ),
+                  TextField(
+                    controller: genderController,
+                    decoration: const InputDecoration(labelText: 'Gender'),
+                  ),
+                  TextField(
+                    controller: phoneNumberController,
+                    decoration:
+                        const InputDecoration(labelText: 'Phone Number'),
+                  ),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        var updatedFields = {
+                          if (fullnameController.text != user['fullname'])
+                            'fullname': fullnameController.text,
+                          if (genderController.text != user['gender'])
+                            'gender': genderController.text,
+                          if (phoneNumberController.text !=
+                              user['phone_number'])
+                            'phone_number': phoneNumberController.text,
+                          if (descriptionController.text != user['description'])
+                            'description': descriptionController.text,
+                        };
+
+                        if (updatedFields.isNotEmpty) {
+                          final String updateUserUrl =
+                              'https://co-api-vjvb.onrender.com/api/users/$userId';
+
+                          try {
+                            final http.Response response = await http.put(
+                              Uri.parse(updateUserUrl),
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'x-access-token': widget.token,
+                              },
+                              body: jsonEncode(updatedFields),
+                            );
+
+                            if (response.statusCode == 200) {
+                              setState(() {
+                                userData![index] = {
+                                  ...userData![index],
+                                  ...updatedFields
+                                };
+                              });
+                              print('Usuario actualizado exitosamente');
+                              Navigator.of(context).pop();
+                            } else {
+                              print(
+                                  'Error al actualizar el usuario: ${response.statusCode}');
+                            }
+                          } catch (e) {
+                            print('Excepción al actualizar el usuario: $e');
+                          }
+                        } else {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -168,6 +397,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       return Card(
                         margin: const EdgeInsets.all(10.0),
                         child: ListTile(
+                          onTap: () {
+                            _showUserDetails(user);
+                          }, // Mostrar detalles al hacer clic
                           leading: Stack(
                             children: [
                               CircleAvatar(
@@ -186,8 +418,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color:
-                                          isActive ? Colors.green : Colors.red,
+                                      color: (user['sesion'] == true ||
+                                              user['sesion'] == 'true')
+                                          ? Colors.green
+                                          : Colors.red,
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Colors.white,
@@ -206,6 +440,12 @@ class _DashboardPageState extends State<DashboardPage> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () {
+                                  _showEditUserDialog(index);
+                                },
+                              ),
                               IconButton(
                                 icon: Icon(
                                   isActive ? Icons.toggle_on : Icons.toggle_off,
