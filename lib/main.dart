@@ -85,11 +85,9 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       } catch (error) {
         print('Error al decodificar el token: $error');
-        // Manejar el error si hay un problema al decodificar el token
       }
     } else {
       print('No se encontró ningún token almacenado');
-      // Si no se encuentra ningún token almacenado, no hagas nada
     }
   }
 
