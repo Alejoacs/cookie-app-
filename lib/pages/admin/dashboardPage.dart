@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_declarations, library_private_types_in_public_api, avoid_print, use_build_context_synchronously, avoid_function_literals_in_foreach_calls, prefer_const_constructors
+// ignore_for_file: prefer_const_declarations, library_private_types_in_public_api, avoid_print, use_build_context_synchronously, avoid_function_literals_in_foreach_calls, prefer_const_constructors, deprecated_member_use
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -377,113 +377,122 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Center(
-            child: userData != null
-                ? ListView.builder(
-                    itemCount: userData!.length,
-                    itemBuilder: (context, index) {
-                      var user = userData![index];
-                      var imageUrl = user['image'] != null
-                          ? user['image']['secure_url']
-                          : null;
-                      var isActive = user['status'] == 'active';
-                      var isInactive = user['status'] == 'inactive';
-                      var userRole = user['role'] != null
-                          ? user['role']['name']
-                          : 'No Role';
-                      return Card(
-                        margin: const EdgeInsets.all(10.0),
-                        child: ListTile(
-                          onTap: () {
-                            _showUserDetails(user);
-                          }, // Mostrar detalles al hacer clic
-                          leading: Stack(
-                            children: [
-                              CircleAvatar(
-                                backgroundImage: imageUrl != null
-                                    ? NetworkImage(imageUrl)
-                                    : null,
-                                child: imageUrl == null
-                                    ? const Icon(Icons.person)
-                                    : null,
-                              ),
-                              if (isActive || isInactive)
-                                Positioned(
-                                  right: 0,
-                                  bottom: 0,
-                                  child: Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: BoxDecoration(
-                                      color: (user['sesion'] == true ||
-                                              user['sesion'] == 'true')
-                                          ? Colors.green
-                                          : Colors.red,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2,
+    return WillPopScope(
+      onWillPop: () async {
+        return false;
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Center(
+              child: userData != null
+                  ? ListView.builder(
+                      itemCount: userData!.length,
+                      itemBuilder: (context, index) {
+                        var user = userData![index];
+                        var imageUrl = user['image'] != null
+                            ? user['image']['secure_url']
+                            : null;
+                        var isActive = user['status'] == 'active';
+                        var isInactive = user['status'] == 'inactive';
+                        var userRole = user['role'] != null
+                            ? user['role']['name']
+                            : 'No Role';
+                        return Card(
+                          margin: const EdgeInsets.all(10.0),
+                          child: ListTile(
+                            onTap: () {
+                              _showUserDetails(user);
+                            }, // Mostrar detalles al hacer clic
+                            leading: Stack(
+                              children: [
+                                CircleAvatar(
+                                  backgroundImage: imageUrl != null
+                                      ? NetworkImage(imageUrl)
+                                      : null,
+                                  child: imageUrl == null
+                                      ? const Icon(Icons.person)
+                                      : null,
+                                ),
+                                if (isActive || isInactive)
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: (user['sesion'] == true ||
+                                                user['sesion'] == 'true')
+                                            ? Colors.green
+                                            : Colors.red,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
                                       ),
                                     ),
                                   ),
+                              ],
+                            ),
+                            title: Text(user['username'] ?? 'No Username'),
+                            subtitle: Text(
+                              userRole,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () {
+                                    _showEditUserDialog(index);
+                                  },
                                 ),
-                            ],
-                          ),
-                          title: Text(user['username'] ?? 'No Username'),
-                          subtitle: Text(
-                            userRole,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () {
-                                  _showEditUserDialog(index);
-                                },
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  isActive ? Icons.toggle_on : Icons.toggle_off,
-                                  color: isActive ? Colors.green : Colors.red,
+                                IconButton(
+                                  icon: Icon(
+                                    isActive
+                                        ? Icons.toggle_on
+                                        : Icons.toggle_off,
+                                    color: isActive ? Colors.green : Colors.red,
+                                  ),
+                                  onPressed: () => _toggleUserStatus(index),
                                 ),
-                                onPressed: () => _toggleUserStatus(index),
-                              ),
-                              PopupMenuButton<String>(
-                                child: const Text('Rol'),
-                                onSelected: (String value) {
-                                  _changeUserRole(index, value);
-                                },
-                                itemBuilder: (BuildContext context) {
-                                  return rolesData.map((role) {
-                                    return PopupMenuItem<String>(
-                                      value: role['_id'],
-                                      child: Text(role['name']!),
-                                    );
-                                  }).toList();
-                                },
-                              ),
-                            ],
+                                PopupMenuButton<String>(
+                                  child: const Text('Rol'),
+                                  onSelected: (String value) {
+                                    _changeUserRole(index, value);
+                                  },
+                                  itemBuilder: (BuildContext context) {
+                                    return rolesData.map((role) {
+                                      return PopupMenuItem<String>(
+                                        value: role['_id'],
+                                        child: Text(role['name']!),
+                                      );
+                                    }).toList();
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  )
-                : const CircularProgressIndicator(),
-          ),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              onPressed: () => _logout(context),
-              child: const Icon(Icons.logout),
+                        );
+                      },
+                    )
+                  : const CircularProgressIndicator(),
             ),
-          ),
-        ],
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: FloatingActionButton(
+                onPressed: () => _logout(context),
+                backgroundColor: Colors.red, // Color rojo
+                foregroundColor: Colors.white, // Color blanco para el icono
+                child: const Icon(Icons.logout),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
