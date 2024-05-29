@@ -17,16 +17,25 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   List<dynamic>? userData;
+  List<dynamic>? filteredUserData;
   final List<Map<String, String>> rolesData = [
     {'_id': '664764791b8d18c4f24304a0', 'name': 'user'},
     {'_id': '664764791b8d18c4f24304a1', 'name': 'admin'},
     {'_id': '664764791b8d18c4f24304a2', 'name': 'moderator'},
   ];
+  TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _getUserData();
+    searchController.addListener(_filterUsers);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -69,6 +78,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final List<dynamic> responseData = jsonDecode(response.body);
         setState(() {
           userData = responseData;
+          filteredUserData = responseData;
         });
         print('Datos de usuario obtenidos exitosamente:');
         responseData.forEach((user) {
@@ -82,8 +92,19 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  void _filterUsers() {
+    final query = searchController.text.toLowerCase();
+    setState(() {
+      filteredUserData = userData!.where((user) {
+        final username = user['username']?.toLowerCase() ?? '';
+        final fullname = user['fullname']?.toLowerCase() ?? '';
+        return username.contains(query) || fullname.contains(query);
+      }).toList();
+    });
+  }
+
   Future<void> _toggleUserStatus(int index) async {
-    var user = userData![index];
+    var user = filteredUserData![index];
     var userId = user['_id'];
     var newStatus = user['status'] == 'active' ? 'inactive' : 'active';
     final String toggleStatusUrl =
@@ -101,7 +122,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
       if (response.statusCode == 200) {
         setState(() {
-          userData![index]['status'] = newStatus;
+          userData![userData!.indexWhere((u) => u['_id'] == userId)]['status'] =
+              newStatus;
+          filteredUserData![index]['status'] = newStatus;
         });
         print('Estado del usuario actualizado exitosamente: $newStatus');
       } else {
@@ -114,7 +137,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _changeUserRole(int index, String roleId) async {
-    var user = userData![index];
+    var user = filteredUserData![index];
     var userId = user['_id'];
     final String changeRoleUrl =
         'https://co-api-vjvb.onrender.com/api/users/changeRole';
@@ -131,7 +154,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
       if (response.statusCode == 200) {
         setState(() {
-          userData![index]['role'] = {
+          userData![userData!.indexWhere((u) => u['_id'] == userId)]['role'] = {
+            '_id': roleId,
+            'name':
+                rolesData.firstWhere((role) => role['_id'] == roleId)['name']
+          };
+          filteredUserData![index]['role'] = {
             '_id': roleId,
             'name':
                 rolesData.firstWhere((role) => role['_id'] == roleId)['name']
@@ -266,7 +294,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _showEditUserDialog(int index) {
-    var user = userData![index];
+    var user = filteredUserData![index];
     var userId = user['_id'];
 
     TextEditingController fullnameController =
@@ -345,8 +373,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
                             if (response.statusCode == 200) {
                               setState(() {
-                                userData![index] = {
-                                  ...userData![index],
+                                userData![userData!
+                                    .indexWhere((u) => u['_id'] == userId)] = {
+                                  ...userData![userData!
+                                      .indexWhere((u) => u['_id'] == userId)],
+                                  ...updatedFields
+                                };
+                                filteredUserData![index] = {
+                                  ...filteredUserData![index],
                                   ...updatedFields
                                 };
                               });
@@ -384,110 +418,133 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Scaffold(
         body: Stack(
           children: [
-            Center(
-              child: userData != null
-                  ? ListView.builder(
-                      itemCount: userData!.length,
-                      itemBuilder: (context, index) {
-                        var user = userData![index];
-                        var imageUrl = user['image'] != null
-                            ? user['image']['secure_url']
-                            : null;
-                        var isActive = user['status'] == 'active';
-                        var isInactive = user['status'] == 'inactive';
-                        var userRole = user['role'] != null
-                            ? user['role']['name']
-                            : 'No Role';
-                        return Card(
-                          margin: const EdgeInsets.all(10.0),
-                          child: ListTile(
-                            onTap: () {
-                              _showUserDetails(user);
-                            }, // Mostrar detalles al hacer clic
-                            leading: Stack(
-                              children: [
-                                CircleAvatar(
-                                  backgroundImage: imageUrl != null
-                                      ? NetworkImage(imageUrl)
-                                      : null,
-                                  child: imageUrl == null
-                                      ? const Icon(Icons.person)
-                                      : null,
-                                ),
-                                if (isActive || isInactive)
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: (user['sesion'] == true ||
-                                                user['sesion'] == 'true')
-                                            ? Colors.green
-                                            : Colors.red,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.white,
-                                          width: 2,
-                                        ),
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Search by username',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: filteredUserData != null
+                        ? ListView.builder(
+                            itemCount: filteredUserData!.length,
+                            itemBuilder: (context, index) {
+                              var user = filteredUserData![index];
+                              var imageUrl = user['image'] != null
+                                  ? user['image']['secure_url']
+                                  : null;
+                              var isActive = user['status'] == 'active';
+                              var isInactive = user['status'] == 'inactive';
+                              var userRole = user['role'] != null
+                                  ? user['role']['name']
+                                  : 'No Role';
+                              return Card(
+                                margin: const EdgeInsets.all(10.0),
+                                child: ListTile(
+                                  onTap: () {
+                                    _showUserDetails(user);
+                                  },
+                                  leading: Stack(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundImage: imageUrl != null
+                                            ? NetworkImage(imageUrl)
+                                            : null,
+                                        child: imageUrl == null
+                                            ? const Icon(Icons.person)
+                                            : null,
                                       ),
-                                    ),
+                                      if (isActive || isInactive)
+                                        Positioned(
+                                          right: 0,
+                                          bottom: 0,
+                                          child: Container(
+                                            width: 12,
+                                            height: 12,
+                                            decoration: BoxDecoration(
+                                              color: (user['sesion'] == true ||
+                                                      user['sesion'] == 'true')
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: Colors.white,
+                                                width: 2,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                              ],
-                            ),
-                            title: Text(user['username'] ?? 'No Username'),
-                            subtitle: Text(
-                              userRole,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () {
-                                    _showEditUserDialog(index);
-                                  },
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    isActive
-                                        ? Icons.toggle_on
-                                        : Icons.toggle_off,
-                                    color: isActive ? Colors.green : Colors.red,
+                                  title:
+                                      Text(user['username'] ?? 'No Username'),
+                                  subtitle: Text(
+                                    userRole,
+                                    style: const TextStyle(fontSize: 12),
                                   ),
-                                  onPressed: () => _toggleUserStatus(index),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit),
+                                        onPressed: () {
+                                          _showEditUserDialog(index);
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          isActive
+                                              ? Icons.toggle_on
+                                              : Icons.toggle_off,
+                                          color: isActive
+                                              ? Colors.green
+                                              : Colors.red,
+                                        ),
+                                        onPressed: () =>
+                                            _toggleUserStatus(index),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        child: const Text('Rol'),
+                                        onSelected: (String value) {
+                                          _changeUserRole(index, value);
+                                        },
+                                        itemBuilder: (BuildContext context) {
+                                          return rolesData.map((role) {
+                                            return PopupMenuItem<String>(
+                                              value: role['_id'],
+                                              child: Text(role['name']!),
+                                            );
+                                          }).toList();
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                PopupMenuButton<String>(
-                                  child: const Text('Rol'),
-                                  onSelected: (String value) {
-                                    _changeUserRole(index, value);
-                                  },
-                                  itemBuilder: (BuildContext context) {
-                                    return rolesData.map((role) {
-                                      return PopupMenuItem<String>(
-                                        value: role['_id'],
-                                        child: Text(role['name']!),
-                                      );
-                                    }).toList();
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  : const CircularProgressIndicator(),
+                              );
+                            },
+                          )
+                        : const CircularProgressIndicator(),
+                  ),
+                ),
+              ],
             ),
             Positioned(
               bottom: 16,
               right: 16,
               child: FloatingActionButton(
                 onPressed: () => _logout(context),
-                backgroundColor: Colors.red, // Color rojo
-                foregroundColor: Colors.white, // Color blanco para el icono
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
                 child: const Icon(Icons.logout),
               ),
             ),
