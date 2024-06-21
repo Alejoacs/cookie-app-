@@ -127,7 +127,6 @@ class _LoginPageState extends State<LoginPage> {
     String? token = prefs.getString('user_token');
 
     if (token != null) {
-      print('Token recuperado: $token');
       try {
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         String role = decodedToken['role'];
@@ -220,18 +219,6 @@ class _LoginPageState extends State<LoginPage> {
                         height: 200,
                       ),
                     ),
-                    // Container(
-                    //   margin: EdgeInsets.only(top: 5),
-                    //   child: const Text(
-                    //     'COOKIE, The new social network for people with visual disabilities.',
-                    //     textAlign: TextAlign.center,
-                    //     style: TextStyle(
-                    //       fontSize: 20,
-                    //       fontWeight: FontWeight.bold,
-                    //       color: Colors.black,
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
               ),

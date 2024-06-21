@@ -202,16 +202,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     height: 200,
                   ),
                 ),
-                // const SizedBox(height: 5),
-                // const Text(
-                //   'COOKIE, The new social network for people with visual disabilities.',
-                //   textAlign: TextAlign.center,
-                //   style: TextStyle(
-                //     fontSize: 20,
-                //     fontWeight: FontWeight.bold,
-                //     color: Colors.black,
-                //   ),
-                // ),
               ],
             ),
             Column(

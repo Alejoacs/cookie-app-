@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cookie_flutter_app/pages/admin/AnalysisPage.dart';
+import 'package:cookie_flutter_app/pages/admin/SettingsPage.dart';
 import 'package:cookie_flutter_app/main.dart' as main;
 
 class DashboardPage extends StatefulWidget {
@@ -416,6 +418,50 @@ class _DashboardPageState extends State<DashboardPage> {
         return false;
       },
       child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false, // Esto quita la flecha hacia atrás
+          title: Text('USERS', style: TextStyle(color: Colors.white)),
+          iconTheme: IconThemeData(color: Colors.white),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.dashboard),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => DashboardPage(token: widget.token)),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.analytics),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => AnalysisPage(token: widget.token)),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons
+                  .person), // Cambiado el ícono de configuración por el ícono de perfil
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => SettingsPage(token: widget.token)),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.logout),
+              onPressed: () {
+                _logout(context);
+              },
+            ),
+          ],
+        ),
         body: Stack(
           children: [
             Column(
@@ -538,16 +584,16 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: FloatingActionButton(
-                onPressed: () => _logout(context),
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                child: const Icon(Icons.logout),
-              ),
-            ),
+            // Positioned(
+            //   bottom: 16,
+            //   right: 16,
+            //   child: FloatingActionButton(
+            //     onPressed: () => _logout(context),
+            //     backgroundColor: Colors.red,
+            //     foregroundColor: Colors.white,
+            //     child: const Icon(Icons.logout),
+            //   ),
+            // ),
           ],
         ),
       ),
