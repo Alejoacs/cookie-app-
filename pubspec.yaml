@@ -26,6 +26,7 @@ dependencies:
 
 
   cupertino_icons: ^1.0.6
+  flutter_keyboard_visibility: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -39,3 +40,6 @@ flutter:
   assets:
    - assets/img/img.png
    - assets/img/img2.png
+   - assets/pics/m.png
+   - assets/pics/n.png
+   - assets/pics/f.png

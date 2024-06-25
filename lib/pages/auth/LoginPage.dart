@@ -20,6 +20,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _recoverEmailController = TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
   bool _obscurePassword = true;
 
   Future<void> _loginUser(BuildContext context) async {
@@ -120,6 +122,112 @@ class _LoginPageState extends State<LoginPage> {
         );
       },
     );
+  }
+
+  void _showRecoverPasswordDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Recover Password'),
+          content: TextFormField(
+            controller: _recoverEmailController,
+            decoration: InputDecoration(
+              labelText: 'Email',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              prefixIcon: Icon(Icons.email, color: Color(0xFFDD2525)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Recover'),
+              onPressed: () {
+                _recoverPassword(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCodeInputDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Enter Code'),
+          content: TextFormField(
+            controller: _codeController,
+            decoration: InputDecoration(
+              labelText: 'Code',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              prefixIcon: Icon(Icons.lock, color: Color(0xFFDD2525)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Submit'),
+              onPressed: () {
+                _submitCode(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _recoverPassword(BuildContext context) async {
+    const String apiUrl = 'https://co-api-vjvb.onrender.com/api/auth/recover';
+
+    final Map<String, String> data = {
+      'email': _recoverEmailController.text,
+    };
+
+    final jsonData = jsonEncode(data);
+
+    try {
+      final http.Response response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonData,
+      );
+
+      if (response.statusCode == 200) {
+        Navigator.of(context).pop();
+        _showCodeInputDialog(context);
+      } else {
+        _showErrorDialog(context, 'Failed to send recovery email.');
+      }
+    } catch (error) {
+      _showErrorDialog(context, 'Network error. Check your connection.');
+    }
+  }
+
+  Future<void> _submitCode(BuildContext context) async {
+    // Aquí debes manejar el envío del código
+    // Por ejemplo, puedes enviar el código a otra API para validar
+    final String code = _codeController.text;
+    // Realiza la validación del código según tu lógica
+    Navigator.of(context).pop();
+    _showErrorDialog(context, 'Code submitted: $code');
   }
 
   Future<void> _checkLoginStatus(BuildContext context) async {
@@ -223,9 +331,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               Container(
+                margin: EdgeInsets.only(top: 40),
                 child: Column(
                   children: <Widget>[
-                    const SizedBox(height: 20),
                     TextFormField(
                       controller: _emailController,
                       decoration: InputDecoration(
@@ -278,10 +386,37 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           children: [
                             TextSpan(
-                              text: 'Don´t have an account? ',
+                              text: 'Don’t have an account? ',
                             ),
                             TextSpan(
                               text: 'Sign up now',
+                              style: TextStyle(
+                                color: Color(0xFFDD2525),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.left,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: () {
+                        _showRecoverPasswordDialog(context);
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'Forgot your password? ',
+                            ),
+                            TextSpan(
+                              text: 'Recover now',
                               style: TextStyle(
                                 color: Color(0xFFDD2525),
                                 fontWeight: FontWeight.bold,
@@ -310,7 +445,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       child: const Text(
-                        'Sing In',
+                        'Sign In',
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
@@ -333,3 +468,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+
+// SingleChildScrollView 

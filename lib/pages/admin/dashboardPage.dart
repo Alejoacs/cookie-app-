@@ -486,7 +486,9 @@ class _DashboardPageState extends State<DashboardPage> {
                             itemCount: filteredUserData!.length,
                             itemBuilder: (context, index) {
                               var user = filteredUserData![index];
-                              var imageUrl = user['image'] != null
+                              var imageUrl = user['image'] != null &&
+                                      user['image'] is Map &&
+                                      user['image'].containsKey('secure_url')
                                   ? user['image']['secure_url']
                                   : null;
                               var isActive = user['status'] == 'active';

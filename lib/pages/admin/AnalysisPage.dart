@@ -112,10 +112,15 @@ class _AnalysisPageState extends State<AnalysisPage> {
   }
 
   Future<void> _getPosts() async {
+    final now = DateTime.now();
+    final String todayStart = DateFormat('yyyy-MM-dd').format(now);
+    final String todayEnd =
+        DateFormat('yyyy-MM-dd').format(now.add(Duration(days: 1)));
+
     const String postsUrl = 'https://co-api-vjvb.onrender.com/api/stats/posts';
 
     final response = await http.get(
-      Uri.parse(postsUrl),
+      Uri.parse('$postsUrl?start=$todayStart&end=$todayEnd'),
       headers: {
         'x-access-token': widget.token,
       },
@@ -209,6 +214,12 @@ class _AnalysisPageState extends State<AnalysisPage> {
 
     int totalCount = maleCount + femaleCount + nonBinaryCount;
 
+    // Verificar si totalCount es cero
+    if (totalCount == 0) {
+      // Manejo de error o situación especial (por ejemplo, todos los valores son cero)
+      return [];
+    }
+
     List<GenderData> chartData = [
       GenderData(gender: 'male', count: (maleCount / totalCount * 100).round()),
       GenderData(
@@ -230,27 +241,34 @@ class _AnalysisPageState extends State<AnalysisPage> {
   }
 
   List<SplineSeries<PostRecord, String>> _createPostsChartData() {
-    Map<String, int> postsPerDay = {};
+    // Crear un mapa para contar los posts por hora del día
+    Map<String, int> postsPerHour = {};
     for (var post in posts) {
-      String dayKey = DateFormat('yyyy-MM-dd').format(post.postTime);
-      postsPerDay[dayKey] = (postsPerDay[dayKey] ?? 0) + 1;
+      // Obtener la hora del post
+      String hourKey = DateFormat('HH').format(post.postTime);
+      // Incrementar el conteo de posts para esa hora
+      postsPerHour[hourKey] = (postsPerHour[hourKey] ?? 0) + 1;
     }
 
-    List<PostRecord> chartData = postsPerDay.entries
+    // Crear la lista de datos para la gráfica
+    List<PostRecord> chartData = postsPerHour.entries
         .map((entry) => PostRecord(
-            postTime: DateTime.parse(entry.key),
-            day: entry.key,
-            postCount: entry.value))
+              hour: entry.key,
+              postCount: entry.value,
+              postTime:
+                  DateTime.now(), // Puedes ajustar este valor si es necesario
+            ))
         .toList();
 
-    chartData.sort((a, b) => a.day.compareTo(b.day));
+    // Ordenar los datos por la hora del día
+    chartData.sort((a, b) => int.parse(a.hour).compareTo(int.parse(b.hour)));
 
     return [
       SplineSeries<PostRecord, String>(
         dataSource: chartData,
-        xValueMapper: (PostRecord record, _) => record.day,
+        xValueMapper: (PostRecord record, _) => record.hour,
         yValueMapper: (PostRecord record, _) => record.postCount.toDouble(),
-        color: Colors.green, // Puedes cambiar el color según tu preferencia
+        color: Colors.green, // Color de la línea en la gráfica
       ),
     ];
   }

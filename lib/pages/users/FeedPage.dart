@@ -1,15 +1,18 @@
-// ignore: file_names
-// ignore_for_file: avoid_print, prefer_const_constructors, prefer_const_literals_to_create_immutables, use_build_context_synchronously, use_key_in_widget_constructors, unused_local_variable, unused_element
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
+import 'package:async/async.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cookie_flutter_app/main.dart' as main;
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class FeedPage extends StatefulWidget {
   final String token;
 
-  const FeedPage({super.key, required this.token});
+  const FeedPage({Key? key, required this.token}) : super(key: key);
 
   @override
   _FeedPageState createState() => _FeedPageState();
@@ -17,11 +20,29 @@ class FeedPage extends StatefulWidget {
 
 class _FeedPageState extends State<FeedPage> {
   Map<String, dynamic>? userData;
+  final picker = ImagePicker();
+  XFile? pickedImage;
+  List<dynamic> posts = [];
+  String? userLoggedId;
 
   @override
   void initState() {
     super.initState();
-    // _getUserData(); // Elimina esta línea
+    _decodeToken();
+    _getUserData();
+    _getPosts();
+  }
+
+  Future<void> _decodeToken() async {
+    try {
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(widget.token);
+      setState(() {
+        userLoggedId = decodedToken['id'];
+        print(userLoggedId);
+      });
+    } catch (e) {
+      print('Error decoding token: $e');
+    }
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -66,12 +87,61 @@ class _FeedPageState extends State<FeedPage> {
         setState(() {
           userData = responseData;
         });
-        // print('Datos de usuario obtenidos exitosamente: $responseData');
       } else {
         print('Error al obtener datos de usuario: ${response.statusCode}');
       }
     } catch (e) {
       print('Excepción al obtener datos de usuario: $e');
+    }
+  }
+
+  Future<void> _getPosts() async {
+    const String getPostsUrl = 'https://co-api-vjvb.onrender.com/api/posts/';
+
+    try {
+      final http.Response response = await http.get(
+        Uri.parse(getPostsUrl),
+        headers: {
+          'x-access-token': widget.token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = jsonDecode(response.body);
+
+        List<dynamic> updatedPosts = [];
+
+        for (var post in responseData.reversed) {
+          String userId = post['userId'];
+
+          // Obtener información del usuario que creó el post
+          final userResponse = await http.get(
+            Uri.parse('https://co-api-vjvb.onrender.com/api/users/$userId'),
+            headers: {
+              'x-access-token': widget.token,
+            },
+          );
+
+          if (userResponse.statusCode == 200) {
+            final userData = jsonDecode(userResponse.body);
+            post['user'] = userData; // Añadir datos del usuario al post
+            updatedPosts.add(post);
+          } else {
+            print(
+                'Error al obtener información del usuario: ${userResponse.statusCode}');
+          }
+        }
+
+        setState(() {
+          posts = updatedPosts;
+        });
+
+        print('Posts actualizados: $posts');
+      } else {
+        print('Error al obtener posts: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Excepción al obtener posts: $e');
     }
   }
 
@@ -85,20 +155,472 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
+  Future<void> _saveUserData(Map<String, dynamic> updatedData) async {
+    const String saveUserDataUrl =
+        'https://co-api-vjvb.onrender.com/api/profile/';
+
+    try {
+      final Uri uri = Uri.parse(saveUserDataUrl);
+      var request = http.MultipartRequest('PUT', uri);
+
+      request.headers['x-access-token'] = widget.token;
+
+      // Convert dynamic fields to Map<String, String>
+      Map<String, String> stringData = {};
+      updatedData.forEach((key, value) {
+        stringData[key] = value.toString();
+      });
+
+      // Add text fields to multipart request
+      request.fields.addAll(stringData);
+
+      if (pickedImage != null) {
+        var stream =
+            http.ByteStream(DelegatingStream.typed(pickedImage!.openRead()));
+        var length = await pickedImage!.length();
+
+        var multipartFile = http.MultipartFile(
+          'image',
+          stream,
+          length,
+          filename: path.basename(pickedImage!.path),
+        );
+
+        request.files.add(multipartFile);
+      }
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        print('Datos de usuario actualizados exitosamente');
+        setState(() {
+          userData = updatedData;
+        });
+      } else {
+        print('Error al actualizar datos de usuario: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Excepción al actualizar datos de usuario: $e');
+    }
+  }
+
+  Future<void> _updateProfilePicture() async {
+    final XFile? image =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+
+    if (image != null) {
+      try {
+        // Intenta cargar la imagen seleccionada
+        setState(() {
+          pickedImage = image;
+        });
+      } catch (e) {
+        // Captura cualquier error al cargar la imagen
+        print('Error al cargar la imagen: $e');
+      }
+    } else {
+      print('No se seleccionó ninguna imagen.');
+    }
+  }
+
+  Widget _buildEditProfileModal(BuildContext context) {
+    TextEditingController fullnameController =
+        TextEditingController(text: userData?['fullname']);
+    TextEditingController usernameController =
+        TextEditingController(text: userData?['username']);
+    TextEditingController emailController =
+        TextEditingController(text: userData?['email']);
+    TextEditingController phoneController =
+        TextEditingController(text: userData?['phone_number']);
+    TextEditingController descriptionController =
+        TextEditingController(text: userData?['description']);
+
+    return AlertDialog(
+      title: const Text('Editar Perfil'),
+      content: SingleChildScrollView(
+        child: Column(
+          children: [
+            if (userData != null) ...[
+              GestureDetector(
+                onTap: () {
+                  _updateProfilePicture();
+                },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    pickedImage != null
+                        ? ClipOval(
+                            child: Image.file(
+                              File(pickedImage!.path),
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : userData!['image'] != null &&
+                                userData!['image']['secure_url'] != null
+                            ? ClipOval(
+                                child: Image.network(
+                                  userData!['image']['secure_url'],
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Container(
+                                color: Colors.grey[300],
+                                width: 100,
+                                height: 100,
+                                child: Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                    Icon(
+                      Icons.camera_alt,
+                      size: 40,
+                      color: Colors.white.withOpacity(0.6),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: fullnameController,
+                decoration: const InputDecoration(labelText: 'Nombre Completo'),
+              ),
+              TextField(
+                controller: usernameController,
+                decoration:
+                    const InputDecoration(labelText: 'Nombre de Usuario'),
+              ),
+              TextField(
+                controller: emailController,
+                decoration:
+                    const InputDecoration(labelText: 'Correo Electrónico'),
+              ),
+              TextField(
+                controller: phoneController,
+                decoration:
+                    const InputDecoration(labelText: 'Número de Teléfono'),
+              ),
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+              ),
+            ] else ...[
+              const Text('Cargando datos...'),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Map<String, dynamic> updatedData = {
+              'fullname': fullnameController.text,
+              'username': usernameController.text,
+              'email': emailController.text,
+              'phone_number': phoneController.text,
+              'description': descriptionController.text,
+            };
+            await _saveUserData(updatedData);
+            Navigator.of(context).pop(); // Cierra la modal después de guardar
+          },
+          child: const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileModal(BuildContext context) {
+    return AlertDialog(
+      contentPadding: const EdgeInsets.all(20),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (userData != null) ...[
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                if (userData != null) ...[
+                  if (userData!['image'] != null &&
+                      userData!['image']['secure_url'] != null) ...[
+                    Stack(
+                      children: [
+                        ClipOval(
+                          child: Image.network(
+                            userData!['image']['secure_url'],
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Icon(
+                            userData!['status'] == 'active'
+                                ? Icons.fiber_manual_record
+                                : Icons.circle,
+                            color: userData!['status'] == 'active'
+                                ? Colors.green
+                                : Colors.red,
+                            size: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text('${userData!['fullname']}'),
+            Text(
+              '@${userData!['username']}',
+              style: const TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            Text('${userData!['description']}'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cierra la modal actual
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return _buildEditProfileModal(context);
+                  },
+                );
+              },
+              child: const Text('Editar Perfil'),
+            ),
+          ] else ...[
+            const Text('Cargando datos...'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostCard(dynamic post, {required VoidCallback onRefresh}) {
+    Map<String, dynamic>? userData = post['user'] as Map<String, dynamic>?;
+
+    bool isLoggedInUserPost = post['userId'] == userLoggedId;
+    bool isLoggedUserFollowing = false;
+
+    if (!isLoggedInUserPost && userData != null) {
+      List<dynamic>? followers = userData['followers'] as List<dynamic>?;
+
+      if (followers != null && followers.contains(userLoggedId)) {
+        isLoggedUserFollowing = true;
+      }
+    }
+
+    String? gender = userData != null ? userData['gender'] : null;
+    String iconForGender = '';
+    if (gender == 'female') {
+      iconForGender = 'assets/pics/f.png';
+    } else {
+      iconForGender = 'assets/pics/m.png';
+    }
+
+    bool isSessionActive = userData != null &&
+        userData['sesion'] != null &&
+        userData['sesion'] == true;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (userData != null) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSessionActive ? Colors.green : Colors.red,
+                        width: 3,
+                      ),
+                    ),
+                    child: userData['image'] != null &&
+                            userData['image'] is Map<String, dynamic> &&
+                            userData['image']['secure_url'] != null
+                        ? ClipOval(
+                            child: Image.network(
+                              userData['image']['secure_url'],
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : CircleAvatar(
+                            backgroundColor: Colors.grey,
+                            backgroundImage: AssetImage(iconForGender),
+                            radius: 20,
+                          ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userData['fullname'] ?? 'Sin nombre',
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '@${userData['username']}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  if (isLoggedInUserPost)
+                    IconButton(
+                      onPressed: () {
+                        _deletePost(post['id']);
+                      },
+                      icon: const Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                      ),
+                    ),
+                  if (!isLoggedInUserPost && !isLoggedUserFollowing)
+                    IconButton(
+                      onPressed: () {
+                        _followUser(post['userId']);
+                      },
+                      icon: const Icon(
+                        Icons.person_add,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  if (!isLoggedInUserPost && isLoggedUserFollowing)
+                    IconButton(
+                      onPressed: () {
+                        _unfollowUser(post['userId']);
+                      },
+                      icon: const Icon(
+                        Icons.person_remove,
+                        color: Colors.orange,
+                      ),
+                    ),
+                ],
+              ),
+            ] else ...[
+              const Text('Cargando datos...'),
+            ],
+            const SizedBox(
+                height:
+                    10), // Espacio entre fullname/username y contenido del post
+            Text(
+              post['content'] ?? 'Sin contenido',
+            ),
+            if (post['image'] != null && post['image'] is String) ...[
+              const SizedBox(height: 8),
+              Image.network(
+                post['image'], // Usar directamente el campo 'image' como URL
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
+            ]
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _followUser(String userId) async {
+    final url = 'https://co-api-vjvb.onrender.com/api/users/follow/$userId';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': widget.token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('Siguiendo al usuario con ID: $userId');
+        final responseData = json.decode(response.body);
+        print(responseData['message']);
+      } else {
+        final responseData = json.decode(response.body);
+        print('Error: ${responseData['message']}');
+      }
+    } catch (error) {
+      print('Error siguiendo al usuario: $error');
+    }
+  }
+
+  void _unfollowUser(String userId) async {
+    final url = 'https://co-api-vjvb.onrender.com/api/users/unfollow/$userId';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'x-access-token': widget.token,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print('Dejando de seguir al usuario con ID: $userId');
+    } else {
+      print('Error al dejar de seguir al usuario: ${response.body}');
+    }
+  }
+
+  void _deletePost(String postId) {
+    // Implementar lógica para eliminar el post con el postId especificado
+    print('Eliminando el post con ID: $postId');
+    // Aquí podrías realizar una llamada a la API correspondiente para eliminar el post
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  'User feed',
-                  style: TextStyle(fontSize: 24),
-                ),
-              ],
+          Center(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await _getPosts(); // Llama a la función para obtener los posts nuevamente
+              },
+              child: posts.isNotEmpty
+                  ? ListView.builder(
+                      itemCount: posts.length,
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return _buildPostCard(posts[index],
+                              onRefresh:
+                                  _getPosts); // Primer post con gesto de refresco
+                        } else {
+                          return _buildPostCard(posts[index],
+                              onRefresh:
+                                  () {}); // Otros posts sin gesto de refresco
+                        }
+                      },
+                    )
+                  : const CircularProgressIndicator(),
             ),
           ),
           NavBar(
@@ -106,67 +628,6 @@ class _FeedPageState extends State<FeedPage> {
             userData: userData,
             showProfileModal: _showProfileModalWithUserData,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileModal(BuildContext context) {
-    return AlertDialog(
-      // title: Text('User Profile'),
-      contentPadding: EdgeInsets.all(20), // Ajusta el tamaño de la modal aquí
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (userData != null) ...[
-            if (userData!['image'] != null &&
-                userData!['image']['secure_url'] != null) ...[
-              Stack(
-                children: [
-                  ClipOval(
-                    child: Image.network(
-                      userData!['image']['secure_url'],
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Icon(
-                      userData!['status'] == 'active'
-                          ? Icons.fiber_manual_record
-                          : Icons.circle,
-                      color: userData!['status'] == 'active'
-                          ? Colors.green
-                          : Colors.red,
-                      size: 16,
-                    ),
-                  ),
-                  // Positioned(
-                  //   top: 0,
-                  //   left: 0,
-                  //   child: IconButton(
-                  //       icon: Icon(Icons.settings), // Icono de edición
-                  //       onPressed: () {}),
-                  // )
-                ],
-              ),
-            ],
-            Text('${userData!['fullname']}'),
-            Text(
-              '@${userData!['username']}',
-              style: TextStyle(fontSize: 12), // Ajusta el tamaño del texto aquí
-            ),
-            SizedBox(
-                height:
-                    8), // Espacio vertical entre el nombre de usuario y la descripción
-            Text('${userData!['description']}'),
-          ] else ...[
-            Text('Cargando datos...'),
-          ],
         ],
       ),
     );
@@ -208,13 +669,13 @@ class NavBar extends StatelessWidget {
                   onPressed: () {
                     showProfileModal(context);
                   },
-                  child: Column(
+                  child: const Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.keyboard_arrow_up,
+                      Icon(Icons.keyboard_arrow_up,
                           color: Colors.white, size: 24),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: 4),
+                      Text(
                         'Profile',
                         style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
@@ -294,112 +755,53 @@ class NavBar extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Modal for $item'),
           content: modalContent,
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Close'),
-            ),
-          ],
         );
       },
     );
   }
 
   Widget _buildSaveModalContent(BuildContext context) {
-    return Column(
+    return const Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Save your data', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 8),
-        Text('You can save your files securely here.'),
-        SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: Text('Save Now'),
-        ),
+        Text('Save item...'),
       ],
     );
   }
 
   Widget _buildSearchModalContent(BuildContext context) {
-    return Column(
+    return const Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Search for information',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 8),
-        Text('Find what you need with our powerful search tools.'),
-        SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: Text('Start Searching'),
-        ),
+        Text('Search item...'),
       ],
     );
   }
 
   Widget _buildMessageModalContent(BuildContext context) {
-    return Column(
+    return const Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Send a message', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 8),
-        Text('Compose your message and hit send.'),
-        SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {},
-          child: Text('Send Message'),
-        ),
+        Text('Send message...'),
       ],
     );
   }
 
   Widget _buildStatisticsModalContent(BuildContext context) {
-    return Column(
+    return const Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('View your stats', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 8),
-        Text('Analyze your performance with detailed statistics.'),
-        SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: Text('View Stats'),
-        ),
+        Text('View statistics...'),
       ],
     );
   }
 
   Widget _buildNotificationsModalContent(BuildContext context) {
-    return Column(
+    return const Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Check your notifications',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 8),
-        Text('Stay updated with important notifications.'),
-        SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: Text('View Notifications'),
-        ),
+        Text('View notifications...'),
       ],
     );
   }

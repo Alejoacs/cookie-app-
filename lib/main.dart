@@ -64,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
     String? token = prefs.getString('user_token');
 
     if (token != null) {
-      print('Token recuperado: $token');
+      // print('Token recuperado: $token');
       try {
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         String role = decodedToken['role'];
@@ -84,10 +84,10 @@ class _MyHomePageState extends State<MyHomePage> {
           MaterialPageRoute(builder: (context) => targetPage),
         );
       } catch (error) {
-        print('Error al decodificar el token: $error');
+        // print('Error al decodificar el token: $error');
       }
     } else {
-      print('No se encontró ningún token almacenado');
+      // print('No se encontró ningún token almacenado');
     }
   }
 
